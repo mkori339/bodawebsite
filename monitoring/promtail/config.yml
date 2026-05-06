@@ -1,0 +1,58 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: bodarequest-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: bodarequest-backend
+          service: bodarequest-backend
+          __path__: /var/log/bodarequest/backend.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            method: method
+            path: path
+            status_code: status_code
+            request_id: request_id
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+          method:
+
+  - job_name: bodarequest-frontend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: bodarequest-frontend
+          service: bodarequest-frontend
+          __path__: /var/log/bodarequest/frontend-access.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            method: method
+            path: path
+            status_code: status_code
+            request_id: request_id
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+          method:

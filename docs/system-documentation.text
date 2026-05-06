@@ -1,0 +1,524 @@
+BodaRequest System Documentation
+================================
+
+1. System Name
+--------------
+
+BodaRequest
+
+
+2. System Purpose
+-----------------
+
+BodaRequest is a boda boda ride-request and operations management system.
+Its purpose is to connect three main groups in one platform:
+
+- Customers who need rides
+- Riders who provide the transport service
+- Admins who monitor trips, payments, and rider performance
+
+The system is designed as a prototype that demonstrates the full business
+process from ride request up to trip completion and admin tracking.
+
+
+3. What The System Does
+-----------------------
+
+The system allows:
+
+- Customers to register and log in
+- Customers to enter pickup and destination details
+- Customers to receive an estimated trip cost before confirming
+- Customers to create a ride request
+- Customers to complete a demo payment
+- Riders to view paid ride requests
+- Riders to confirm, start, and complete trips
+- Admins to track daily trips
+- Admins to monitor payments
+- Admins to review rider activity and performance
+
+This system is not yet connected to a real payment gateway. Payment is
+currently demonstrated using a simulated payment flow.
+
+
+4. Main User Roles
+------------------
+
+4.1 Customer
+
+The customer can:
+
+- Register and log in
+- Request a ride
+- Fill trip details
+- View trip cost
+- Pay using the demo payment flow
+- Wait for rider confirmation
+- Track ride progress
+
+4.2 Rider
+
+The rider can:
+
+- Register and log in as a rider
+- View available paid ride requests
+- Accept a trip
+- Start a trip
+- Complete a trip
+
+4.3 Admin
+
+The admin can:
+
+- Log in to the admin dashboard
+- View daily trip activity
+- View payment activity
+- View active and completed rides
+- View rider performance and earnings
+
+
+5. Core Business Flow
+---------------------
+
+The main business flow of the system is:
+
+1. Customer creates an account or logs in
+2. Customer fills ride request details
+3. System calculates and displays estimated cost
+4. Customer submits the trip request
+5. Trip is created with status: pending_payment
+6. Customer completes demo payment
+7. Trip status changes to: waiting_rider
+8. Riders can now see the request
+9. A rider accepts the request
+10. Trip status changes to: rider_assigned
+11. Rider starts the trip
+12. Trip status changes to: in_progress
+13. Rider completes the trip
+14. Trip status changes to: completed
+15. Admin dashboard reflects trips, payments, and rider updates
+
+
+6. Detailed User Flow
+---------------------
+
+6.1 Customer Flow
+
+- Open landing page
+- Register or log in
+- Go to customer dashboard
+- Enter:
+  pickup location
+  destination
+  pickup note
+  destination note
+  preferred pickup time
+  distance in kilometers
+  passenger count
+  priority type
+  helmet requirement
+  extra notes
+- Click fare estimate
+- Review estimated cost
+- Create ride request
+- Complete demo payment
+- Wait for rider assignment
+- Track ride until completion
+
+6.2 Rider Flow
+
+- Register or log in as rider
+- Open rider dashboard
+- View available paid rides
+- Confirm one trip
+- See assigned trip details
+- Start trip after pickup
+- Complete trip after drop-off
+
+6.3 Admin Flow
+
+- Log in as admin
+- Open admin dashboard
+- View trip statistics
+- View recent rides
+- View payment records
+- View rider performance and availability
+
+
+7. Ride Status Lifecycle
+------------------------
+
+The ride lifecycle in the current system uses these states:
+
+- pending_payment
+  Trip is created but payment is not completed yet.
+
+- waiting_rider
+  Payment is completed and the ride is now available to riders.
+
+- rider_assigned
+  A rider has accepted the trip.
+
+- in_progress
+  The rider has started the trip.
+
+- completed
+  The trip has finished successfully.
+
+- cancelled
+  Reserved for future cancellation logic.
+
+
+8. Fare Calculation Logic
+-------------------------
+
+The system calculates trip cost using a simple prototype pricing model:
+
+- Base fare
+- Distance charge per kilometer
+- Extra passenger charge
+- Helmet support surcharge if selected
+- Service fee
+- Priority multiplier
+
+Priority types in the system:
+
+- standard
+- express
+- scheduled
+
+This pricing logic is suitable for demonstration and can later be replaced
+with real map-based or GPS-based calculations.
+
+
+9. Payment Logic
+----------------
+
+The system currently uses demo payment logic.
+
+Current behavior:
+
+- Customer creates a ride
+- Customer clicks pay
+- System marks the payment as successful
+- System stores a demo transaction reference
+- Ride becomes visible to riders
+
+This allows the business workflow to be tested before integrating real
+mobile money, card, or wallet payments.
+
+
+10. System Architecture
+-----------------------
+
+The project uses a 3-layer architecture:
+
+1. Frontend
+2. Backend API
+3. Database
+
+10.1 Frontend Layer
+
+Purpose:
+
+- Displays the landing page
+- Handles user interaction
+- Shows dashboards for customer, rider, and admin
+- Sends requests to the backend API
+
+Main frontend responsibilities:
+
+- Authentication forms
+- Ride request form
+- Fare estimation interface
+- Customer trip tracking
+- Rider trip board
+- Admin dashboard and monitoring views
+- Theme switching between light and dark mode
+
+10.2 Backend Layer
+
+Purpose:
+
+- Processes business logic
+- Handles authentication
+- Calculates quotes
+- Stores and retrieves trip data
+- Updates ride status
+- Records demo payments
+- Provides admin reporting data
+
+Main backend responsibilities:
+
+- Register and login users
+- Verify JWT tokens
+- Restrict access by role
+- Create rides
+- Calculate ride cost
+- Accept payment requests
+- Assign rides to riders
+- Update trip progress
+- Return admin metrics
+
+10.3 Database Layer
+
+Purpose:
+
+- Stores users
+- Stores rider profiles
+- Stores ride requests
+- Stores payment records
+
+
+11. Technology Stack
+--------------------
+
+11.1 Frontend Technologies
+
+- React
+- Vite
+- React Router
+- Lucide React icons
+- CSS
+
+Language used in frontend:
+
+- JavaScript
+- JSX
+- CSS
+
+11.2 Backend Technologies
+
+- Node.js
+- Express.js
+- JWT for authentication
+- bcryptjs for password hashing
+- mysql2 for MySQL connection
+
+Language used in backend:
+
+- JavaScript
+
+11.3 Database Technology
+
+- MySQL
+
+
+12. Database Design
+-------------------
+
+The current system uses the following main tables:
+
+12.1 users
+
+Stores all system users:
+
+- customer
+- rider
+- admin
+
+Important fields:
+
+- id
+- full_name
+- email
+- phone
+- password_hash
+- role
+- status
+- created_at
+- updated_at
+
+12.2 rider_profiles
+
+Stores rider-specific information.
+
+Important fields:
+
+- user_id
+- bike_plate
+- current_zone
+- is_available
+- rating
+- completed_trips
+- total_earnings
+
+12.3 ride_requests
+
+Stores trip request details and ride progress.
+
+Important fields:
+
+- id
+- customer_id
+- rider_id
+- pickup_location
+- destination_location
+- requested_pickup_time
+- distance_km
+- estimated_cost
+- payment_status
+- ride_status
+- priority
+- passenger_count
+- helmet_required
+- accepted_at
+- started_at
+- completed_at
+
+12.4 payments
+
+Stores demo payment records.
+
+Important fields:
+
+- id
+- ride_id
+- customer_id
+- amount
+- method
+- transaction_ref
+- payment_status
+- paid_at
+
+
+13. Security And Access Control
+-------------------------------
+
+The system includes:
+
+- Password hashing using bcryptjs
+- JWT-based authentication
+- Protected API routes
+- Role-based access control
+
+Role access behavior:
+
+- Customers can create and pay for their own rides
+- Riders can only access rider trip actions
+- Admins can only access admin reporting endpoints
+
+
+14. User Interface Design Goals
+-------------------------------
+
+The frontend was designed with the following goals:
+
+- Attractive landing page
+- Blue-based visual theme
+- Dark mode support
+- Responsive design for phone, tablet, and desktop
+- Icon-supported interface
+- Animated and modern presentation
+- Clear role-based experience
+
+
+15. Current Project Structure
+-----------------------------
+
+Root folders:
+
+- frontend/
+- backend/
+- docs/
+
+Frontend area:
+
+- pages
+- components
+- context
+- services
+- styles
+
+Backend area:
+
+- controllers
+- routes
+- middleware
+- config
+- utils
+- database
+
+
+16. Main Functional Modules
+---------------------------
+
+16.1 Authentication Module
+
+Handles:
+
+- registration
+- login
+- current user session
+
+16.2 Ride Management Module
+
+Handles:
+
+- quote calculation
+- ride creation
+- ride payment
+- ride listing
+- rider assignment
+- ride start
+- ride completion
+
+16.3 Rider Operations Module
+
+Handles:
+
+- viewing available rides
+- accepting rides
+- managing assigned rides
+
+16.4 Admin Monitoring Module
+
+Handles:
+
+- overview statistics
+- trip reporting
+- payment reporting
+- rider performance reporting
+
+
+17. System Limitations In Current Version
+-----------------------------------------
+
+This version is a prototype. Current limitations include:
+
+- No real payment gateway
+- No real-time socket updates
+- No live map tracking
+- No OTP or SMS notification integration
+- No trip cancellation workflow yet
+- Admin registration is open in demo mode for testing
+
+
+18. Recommended Future Improvements
+-----------------------------------
+
+- Integrate mobile money or card payments
+- Add Google Maps or other map services
+- Calculate distance automatically from coordinates
+- Add live rider location tracking
+- Add notifications and alerts
+- Add cancellation and refund logic
+- Add rating and feedback system
+- Add advanced admin filtering and exports
+- Restrict admin creation in production
+
+
+19. Summary
+-----------
+
+BodaRequest is a full-stack prototype for managing boda boda ride requests.
+It supports customers, riders, and admins in a single workflow.
+
+The system is built with:
+
+- React frontend
+- Node.js and Express backend
+- MySQL database
+
+Its main purpose is to demonstrate how a ride request is created, priced,
+paid for, assigned to a rider, completed, and tracked by administrators.
