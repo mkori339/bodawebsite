@@ -40,6 +40,7 @@ scrape_configs:
         labels:
           job: bodarequest-frontend
           service: bodarequest-frontend
+          log_type: access
           __path__: /var/log/bodarequest/frontend-access.log
     pipeline_stages:
       - json:
@@ -56,3 +57,21 @@ scrape_configs:
       - labels:
           level:
           method:
+
+  - job_name: bodarequest-frontend-error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: bodarequest-frontend
+          service: bodarequest-frontend
+          log_type: error
+          __path__: /var/log/bodarequest/frontend-error.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>[^\]]+)\] .*'
+      - timestamp:
+          source: timestamp
+          format: "2006/01/02 15:04:05"
+      - labels:
+          level:
