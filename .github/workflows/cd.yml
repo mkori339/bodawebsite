@@ -96,6 +96,7 @@ jobs:
         with:
           host: ${{ secrets.STAGING_HOST }}
           port: ${{ secrets.STAGING_PORT || 22 }}
+          command_timeout: 30m
           username: ${{ secrets.STAGING_USERNAME }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
@@ -105,12 +106,25 @@ jobs:
             set -a
             . ./.env
             set +a
+            : "${IMAGE_NAMESPACE:?STAGING_ENV_FILE is missing IMAGE_NAMESPACE}"
+            : "${MYSQL_ROOT_PASSWORD:?STAGING_ENV_FILE is missing MYSQL_ROOT_PASSWORD}"
+            : "${MYSQL_DATABASE:?STAGING_ENV_FILE is missing MYSQL_DATABASE}"
+            : "${JWT_SECRET:?STAGING_ENV_FILE is missing JWT_SECRET}"
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             docker compose -f deploy/docker-compose.deploy.yml pull
             docker compose -f deploy/docker-compose.deploy.yml up -d
+            docker compose -f deploy/docker-compose.deploy.yml ps
             sleep 15
-            curl -fsS "http://localhost:${FRONTEND_PORT}" > /dev/null
-            curl -fsS "http://localhost:${BACKEND_PORT}/api/health"
+            curl -fsS "http://localhost:${FRONTEND_PORT}" > /dev/null || {
+              docker compose -f deploy/docker-compose.deploy.yml ps
+              docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
+              exit 1
+            }
+            curl -fsS "http://localhost:${BACKEND_PORT}/api/health" || {
+              docker compose -f deploy/docker-compose.deploy.yml ps
+              docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
+              exit 1
+            }
 
   deploy-production:
     needs:
@@ -150,6 +164,7 @@ jobs:
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
           port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          command_timeout: 30m
           username: ${{ secrets.PRODUCTION_USERNAME }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
@@ -159,9 +174,22 @@ jobs:
             set -a
             . ./.env
             set +a
+            : "${IMAGE_NAMESPACE:?PRODUCTION_ENV_FILE is missing IMAGE_NAMESPACE}"
+            : "${MYSQL_ROOT_PASSWORD:?PRODUCTION_ENV_FILE is missing MYSQL_ROOT_PASSWORD}"
+            : "${MYSQL_DATABASE:?PRODUCTION_ENV_FILE is missing MYSQL_DATABASE}"
+            : "${JWT_SECRET:?PRODUCTION_ENV_FILE is missing JWT_SECRET}"
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
             docker compose -f deploy/docker-compose.deploy.yml pull
             docker compose -f deploy/docker-compose.deploy.yml up -d
+            docker compose -f deploy/docker-compose.deploy.yml ps
             sleep 15
-            curl -fsS "http://localhost:${FRONTEND_PORT}" > /dev/null
-            curl -fsS "http://localhost:${BACKEND_PORT}/api/health"
+            curl -fsS "http://localhost:${FRONTEND_PORT}" > /dev/null || {
+              docker compose -f deploy/docker-compose.deploy.yml ps
+              docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
+              exit 1
+            }
+            curl -fsS "http://localhost:${BACKEND_PORT}/api/health" || {
+              docker compose -f deploy/docker-compose.deploy.yml ps
+              docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
+              exit 1
+            }
