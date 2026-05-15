@@ -62,7 +62,7 @@ jobs:
 
   deploy-staging:
     needs: build-and-push
-    runs-on: ${{ vars.STAGING_DEPLOY_MODE == 'local' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: self-hosted
     environment: staging
 
     steps:
@@ -170,7 +170,7 @@ jobs:
     needs:
       - build-and-push
       - deploy-staging
-    runs-on: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: self-hosted
     environment: production
 
     steps:
