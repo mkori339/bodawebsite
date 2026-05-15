@@ -170,7 +170,7 @@ jobs:
     needs:
       - build-and-push
       - deploy-staging
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' && 'self-hosted' || 'ubuntu-latest' }}
     environment: production
 
     steps:
@@ -180,6 +180,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Prepare production deployment directory
+        if: ${{ vars.PRODUCTION_DEPLOY_MODE != 'local' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
@@ -190,6 +191,7 @@ jobs:
             mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
 
       - name: Copy deployment files to production server
+        if: ${{ vars.PRODUCTION_DEPLOY_MODE != 'local' }}
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
@@ -199,7 +201,16 @@ jobs:
           source: "deploy/docker-compose.deploy.yml,backend/database/schema.sql"
           target: ${{ secrets.PRODUCTION_APP_DIR }}
 
+      - name: Prepare local production deployment directory
+        if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
+        run: |
+          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/deploy"
+          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/backend/database"
+          install -m 0644 deploy/docker-compose.deploy.yml "${{ secrets.PRODUCTION_APP_DIR }}/deploy/docker-compose.deploy.yml"
+          install -m 0644 backend/database/schema.sql "${{ secrets.PRODUCTION_APP_DIR }}/backend/database/schema.sql"
+
       - name: Deploy to production
+        if: ${{ vars.PRODUCTION_DEPLOY_MODE != 'local' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PRODUCTION_HOST }}
@@ -233,3 +244,32 @@ jobs:
               docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
               exit 1
             }
+
+      - name: Deploy to local production server
+        if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
+        run: |
+          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+          cd "${{ secrets.PRODUCTION_APP_DIR }}"
+          printf '%s\n%s\n' "${{ secrets.PRODUCTION_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
+          set -a
+          . ./.env
+          set +a
+          : "${IMAGE_NAMESPACE:?PRODUCTION_ENV_FILE is missing IMAGE_NAMESPACE}"
+          : "${MYSQL_ROOT_PASSWORD:?PRODUCTION_ENV_FILE is missing MYSQL_ROOT_PASSWORD}"
+          : "${MYSQL_DATABASE:?PRODUCTION_ENV_FILE is missing MYSQL_DATABASE}"
+          : "${JWT_SECRET:?PRODUCTION_ENV_FILE is missing JWT_SECRET}"
+          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+          docker compose -f deploy/docker-compose.deploy.yml pull
+          docker compose -f deploy/docker-compose.deploy.yml up -d
+          docker compose -f deploy/docker-compose.deploy.yml ps
+          sleep 15
+          curl -fsS "http://localhost:${FRONTEND_PORT}" > /dev/null || {
+            docker compose -f deploy/docker-compose.deploy.yml ps
+            docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
+            exit 1
+          }
+          curl -fsS "http://localhost:${BACKEND_PORT}/api/health" || {
+            docker compose -f deploy/docker-compose.deploy.yml ps
+            docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db
+            exit 1
+          }
