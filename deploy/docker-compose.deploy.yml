@@ -30,15 +30,26 @@ services:
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       JWT_SECRET: ${JWT_SECRET}
+      MQTT_URL: mqtt://mqtt:1883
       LOG_SERVICE_NAME: bodarequest-backend
       LOG_FILE_PATH: /var/log/bodarequest/backend.log
     depends_on:
       db:
         condition: service_healthy
+      mqtt:
+        condition: service_started
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     volumes:
       - app_logs:/var/log/bodarequest
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+    volumes:
+      - ../mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 
   frontend:
     image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE}/bodarequest-frontend:${IMAGE_TAG:-latest}

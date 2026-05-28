@@ -26,6 +26,9 @@ jobs:
       - name: Run backend tests
         run: npm --workspace backend run test
 
+      - name: Validate Docker Compose configuration
+        run: docker compose config
+
       - name: Build backend Docker image
         run: docker build -f backend/Dockerfile -t bodarequest-backend:${{ github.sha }} .
 

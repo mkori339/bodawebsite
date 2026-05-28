@@ -14,14 +14,16 @@ BodaRequest is a full-stack ride-request platform prototype for boda boda transp
 
 ## Docker Setup
 
-The project is now containerized with six services:
+The project is containerized with application, real-time messaging, and monitoring services:
 
 - `frontend`: React app built with Vite and served by Nginx
 - `backend`: Express API on port `3001`
 - `db`: MySQL 8.4 with automatic schema import from `backend/database/schema.sql`
+- `mqtt`: Eclipse Mosquitto broker for real-time ride request broadcasting
 - `loki`: log storage for Grafana
 - `promtail`: log collector that reads application log files and ships them to Loki
-- `grafana`: dashboard and log exploration UI with Loki preconfigured as the default data source
+- `prometheus`: metrics storage for backend and container metrics
+- `grafana`: dashboard and log exploration UI with Loki and Prometheus preconfigured
 
 ### First Run
 
@@ -36,6 +38,7 @@ Open the app:
 - Frontend: http://localhost:8080
 - API health check: http://localhost:3001/api/health
 - MySQL: `localhost:3306`
+- MQTT broker: `localhost:1883`
 - Grafana: http://localhost:3000
 
 ### Common Docker Commands
@@ -117,6 +120,7 @@ docker compose exec db mysql -uroot -proot bodarequest
 - The `db` service uses the official `mysql:8.4` image.
 - On the first startup, MySQL imports `backend/database/schema.sql` automatically.
 - The `backend` service connects to MySQL using the Compose service name `db` instead of `localhost`.
+- The `backend` publishes paid ride requests to MQTT topic `ride/request` through the Compose service name `mqtt`.
 - The `frontend` service is built into static files and served by Nginx.
 - Nginx forwards `/api/*` requests to the backend container, so the browser only needs one origin: `http://localhost:8080`.
 - For local non-Docker development, Vite now proxies `/api` to `http://localhost:3001`, so the frontend uses the same API path in both modes.
@@ -159,6 +163,12 @@ Useful notes:
 - Frontend logs come from Nginx access logs, including request path, status code, and upstream timing.
 - The first Grafana login may take a few seconds while the observability containers finish starting.
 
+Provisioned dashboards:
+
+- `Bodarequest Overview` for combined application and container metrics
+- `Bodarequest Business` for users, trips, payments, rider availability, and revenue aggregates from the application database
+- `Bodarequest Containers` for separate frontend and backend container CPU, memory, and network monitoring
+
 ### Environment Variables Used in Docker
 
 These are already given defaults in `docker-compose.yml`, but you can override them by creating a root-level `.env` file before running Docker:
@@ -175,6 +185,7 @@ GRAFANA_PORT=3000
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin123
 LOKI_PORT=3100
+MQTT_PORT=1883
 ```
 
 Important notes:
@@ -365,23 +376,21 @@ It is already connected for
 
   What is not connected yet:
 
-  - MySQL metrics/logs are not in
-    Grafana yet.
-  - Docker/container CPU/RAM
-    metrics are not in Grafana
-    yet.
+  - Raw MySQL server internals are
+    not in Grafana yet.
   - Browser-side React errors are
     not in Grafana yet.
-  - There are no dashboards or
-    alerts prebuilt yet, only the
-    log pipeline.
+  - Alerts are not prebuilt yet.
 
   So the current setup is:
 
-  - Ready for application log
-    monitoring
-  - Not yet ready for metrics/
-    traces/database monitoring
+  - Ready for application logs
+  - Ready for Prometheus-based
+    API, container, and business
+    metrics
+  - Not yet ready for DB engine
+    internals or browser error
+    capture
 
   If you want deeper monitoring,
   the next common additions are:

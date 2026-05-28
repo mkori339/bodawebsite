@@ -1,4 +1,5 @@
 import { query } from '../config/db.js';
+import { buildRideRequestMessage, publishRideRequest } from '../messaging/rideRequestPublisher.js';
 import { calculateQuote } from '../utils/quoteCalculator.js';
 
 function mapRide(row) {
@@ -184,6 +185,8 @@ export async function payForRide(req, res, next) {
     );
 
     const updatedRide = await getRideById(ride.id);
+    const rideRequestEvent = buildRideRequestMessage(updatedRide);
+    const realtimePublished = await publishRideRequest(rideRequestEvent);
 
     return res.json({
       message: 'Demo payment completed.',
@@ -191,6 +194,11 @@ export async function payForRide(req, res, next) {
         transactionRef,
         amount: Number(ride.estimated_cost),
         method: ride.payment_method
+      },
+      realtime: {
+        topic: 'ride/request',
+        event: rideRequestEvent.event,
+        published: realtimePublished
       },
       ride: mapRide(updatedRide)
     });
