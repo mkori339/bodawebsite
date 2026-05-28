@@ -80,7 +80,8 @@ jobs:
           username: ${{ secrets.STAGING_USERNAME }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            mkdir -p "${{ secrets.STAGING_APP_DIR }}"
+            sudo mkdir -p "${{ secrets.STAGING_APP_DIR }}"
+            sudo chown -R "${{ secrets.STAGING_USERNAME }}:${{ secrets.STAGING_USERNAME }}" "${{ secrets.STAGING_APP_DIR }}"
 
       - name: Copy deployment files to staging server
         if: ${{ vars.STAGING_DEPLOY_MODE != 'local' }}
@@ -96,6 +97,8 @@ jobs:
       - name: Prepare local staging deployment directory
         if: ${{ vars.STAGING_DEPLOY_MODE == 'local' }}
         run: |
+          sudo mkdir -p "${{ secrets.STAGING_APP_DIR }}"
+          sudo chown -R "$USER:$USER" "${{ secrets.STAGING_APP_DIR }}"
           mkdir -p "${{ secrets.STAGING_APP_DIR }}/deploy"
           mkdir -p "${{ secrets.STAGING_APP_DIR }}/backend/database"
           mkdir -p "${{ secrets.STAGING_APP_DIR }}/mosquitto/config"
@@ -113,7 +116,8 @@ jobs:
           username: ${{ secrets.STAGING_USERNAME }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            mkdir -p "${{ secrets.STAGING_APP_DIR }}"
+            sudo mkdir -p "${{ secrets.STAGING_APP_DIR }}"
+            sudo chown -R "${{ secrets.STAGING_USERNAME }}:${{ secrets.STAGING_USERNAME }}" "${{ secrets.STAGING_APP_DIR }}"
             cd "${{ secrets.STAGING_APP_DIR }}"
             printf '%s\n%s\n' "${{ secrets.STAGING_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
             set -a
@@ -192,7 +196,8 @@ jobs:
           username: ${{ secrets.PRODUCTION_USERNAME }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
-            mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+            sudo mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+            sudo chown -R "${{ secrets.PRODUCTION_USERNAME }}:${{ secrets.PRODUCTION_USERNAME }}" "${{ secrets.PRODUCTION_APP_DIR }}"
 
       - name: Copy deployment files to production server
         if: ${{ vars.PRODUCTION_DEPLOY_MODE != 'local' }}
@@ -208,6 +213,8 @@ jobs:
       - name: Prepare local production deployment directory
         if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
         run: |
+          sudo mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+          sudo chown -R "$USER:$USER" "${{ secrets.PRODUCTION_APP_DIR }}"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/deploy"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/backend/database"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/mosquitto/config"
@@ -225,7 +232,8 @@ jobs:
           username: ${{ secrets.PRODUCTION_USERNAME }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
           script: |
-            mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+            sudo mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+            sudo chown -R "${{ secrets.PRODUCTION_USERNAME }}:${{ secrets.PRODUCTION_USERNAME }}" "${{ secrets.PRODUCTION_APP_DIR }}"
             cd "${{ secrets.PRODUCTION_APP_DIR }}"
             printf '%s\n%s\n' "${{ secrets.PRODUCTION_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
             set -a
@@ -255,6 +263,8 @@ jobs:
       - name: Deploy to local production server
         if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
         run: |
+          sudo mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
+          sudo chown -R "$USER:$USER" "${{ secrets.PRODUCTION_APP_DIR }}"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
           cd "${{ secrets.PRODUCTION_APP_DIR }}"
           printf '%s\n%s\n' "${{ secrets.PRODUCTION_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
