@@ -97,8 +97,13 @@ jobs:
       - name: Prepare local staging deployment directory
         if: ${{ vars.STAGING_DEPLOY_MODE == 'local' }}
         run: |
-          sudo mkdir -p "${{ secrets.STAGING_APP_DIR }}"
-          sudo chown -R "$USER:$USER" "${{ secrets.STAGING_APP_DIR }}"
+          DEPLOY_DIR="${{ secrets.STAGING_APP_DIR }}"
+          PARENT_DIR="$(dirname "$DEPLOY_DIR")"
+          if [ ! -w "$PARENT_DIR" ]; then
+            echo "Cannot write to $PARENT_DIR."
+            echo "For local deploy mode, set STAGING_APP_DIR to a folder owned by the runner user, for example /home/$USER/bodarequest-staging."
+            exit 1
+          fi
           mkdir -p "${{ secrets.STAGING_APP_DIR }}/deploy"
           mkdir -p "${{ secrets.STAGING_APP_DIR }}/backend/database"
           mkdir -p "${{ secrets.STAGING_APP_DIR }}/mosquitto/config"
@@ -213,8 +218,13 @@ jobs:
       - name: Prepare local production deployment directory
         if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
         run: |
-          sudo mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
-          sudo chown -R "$USER:$USER" "${{ secrets.PRODUCTION_APP_DIR }}"
+          DEPLOY_DIR="${{ secrets.PRODUCTION_APP_DIR }}"
+          PARENT_DIR="$(dirname "$DEPLOY_DIR")"
+          if [ ! -w "$PARENT_DIR" ]; then
+            echo "Cannot write to $PARENT_DIR."
+            echo "For local deploy mode, set PRODUCTION_APP_DIR to a folder owned by the runner user, for example /home/$USER/bodarequest-production."
+            exit 1
+          fi
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/deploy"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/backend/database"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/mosquitto/config"
@@ -263,8 +273,6 @@ jobs:
       - name: Deploy to local production server
         if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
         run: |
-          sudo mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
-          sudo chown -R "$USER:$USER" "${{ secrets.PRODUCTION_APP_DIR }}"
           mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
           cd "${{ secrets.PRODUCTION_APP_DIR }}"
           printf '%s\n%s\n' "${{ secrets.PRODUCTION_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
