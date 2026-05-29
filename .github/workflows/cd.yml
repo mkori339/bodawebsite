@@ -99,17 +99,17 @@ jobs:
         run: |
           DEPLOY_DIR="${{ secrets.STAGING_APP_DIR }}"
           PARENT_DIR="$(dirname "$DEPLOY_DIR")"
-          if [ ! -w "$PARENT_DIR" ]; then
-            echo "Cannot write to $PARENT_DIR."
-            echo "For local deploy mode, set STAGING_APP_DIR to a folder owned by the runner user, for example /home/$USER/bodarequest-staging."
-            exit 1
+          if { [ -e "$DEPLOY_DIR" ] && [ ! -w "$DEPLOY_DIR" ]; } || [ ! -w "$PARENT_DIR" ]; then
+            DEPLOY_DIR="$HOME/bodarequest-staging"
+            echo "Configured STAGING_APP_DIR is not writable by the runner. Using $DEPLOY_DIR instead."
           fi
-          mkdir -p "${{ secrets.STAGING_APP_DIR }}/deploy"
-          mkdir -p "${{ secrets.STAGING_APP_DIR }}/backend/database"
-          mkdir -p "${{ secrets.STAGING_APP_DIR }}/mosquitto/config"
-          install -m 0644 deploy/docker-compose.deploy.yml "${{ secrets.STAGING_APP_DIR }}/deploy/docker-compose.deploy.yml"
-          install -m 0644 backend/database/schema.sql "${{ secrets.STAGING_APP_DIR }}/backend/database/schema.sql"
-          install -m 0644 mosquitto/config/mosquitto.conf "${{ secrets.STAGING_APP_DIR }}/mosquitto/config/mosquitto.conf"
+          echo "STAGING_RUNTIME_APP_DIR=$DEPLOY_DIR" >> "$GITHUB_ENV"
+          mkdir -p "$DEPLOY_DIR/deploy"
+          mkdir -p "$DEPLOY_DIR/backend/database"
+          mkdir -p "$DEPLOY_DIR/mosquitto/config"
+          install -m 0644 deploy/docker-compose.deploy.yml "$DEPLOY_DIR/deploy/docker-compose.deploy.yml"
+          install -m 0644 backend/database/schema.sql "$DEPLOY_DIR/backend/database/schema.sql"
+          install -m 0644 mosquitto/config/mosquitto.conf "$DEPLOY_DIR/mosquitto/config/mosquitto.conf"
 
       - name: Deploy to staging
         if: ${{ vars.STAGING_DEPLOY_MODE != 'local' }}
@@ -152,8 +152,8 @@ jobs:
       - name: Deploy to local staging server
         if: ${{ vars.STAGING_DEPLOY_MODE == 'local' }}
         run: |
-          mkdir -p "${{ secrets.STAGING_APP_DIR }}"
-          cd "${{ secrets.STAGING_APP_DIR }}"
+          mkdir -p "$STAGING_RUNTIME_APP_DIR"
+          cd "$STAGING_RUNTIME_APP_DIR"
           printf '%s\n%s\n' "${{ secrets.STAGING_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
           set -a
           . ./.env
@@ -220,17 +220,17 @@ jobs:
         run: |
           DEPLOY_DIR="${{ secrets.PRODUCTION_APP_DIR }}"
           PARENT_DIR="$(dirname "$DEPLOY_DIR")"
-          if [ ! -w "$PARENT_DIR" ]; then
-            echo "Cannot write to $PARENT_DIR."
-            echo "For local deploy mode, set PRODUCTION_APP_DIR to a folder owned by the runner user, for example /home/$USER/bodarequest-production."
-            exit 1
+          if { [ -e "$DEPLOY_DIR" ] && [ ! -w "$DEPLOY_DIR" ]; } || [ ! -w "$PARENT_DIR" ]; then
+            DEPLOY_DIR="$HOME/bodarequest-production"
+            echo "Configured PRODUCTION_APP_DIR is not writable by the runner. Using $DEPLOY_DIR instead."
           fi
-          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/deploy"
-          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/backend/database"
-          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}/mosquitto/config"
-          install -m 0644 deploy/docker-compose.deploy.yml "${{ secrets.PRODUCTION_APP_DIR }}/deploy/docker-compose.deploy.yml"
-          install -m 0644 backend/database/schema.sql "${{ secrets.PRODUCTION_APP_DIR }}/backend/database/schema.sql"
-          install -m 0644 mosquitto/config/mosquitto.conf "${{ secrets.PRODUCTION_APP_DIR }}/mosquitto/config/mosquitto.conf"
+          echo "PRODUCTION_RUNTIME_APP_DIR=$DEPLOY_DIR" >> "$GITHUB_ENV"
+          mkdir -p "$DEPLOY_DIR/deploy"
+          mkdir -p "$DEPLOY_DIR/backend/database"
+          mkdir -p "$DEPLOY_DIR/mosquitto/config"
+          install -m 0644 deploy/docker-compose.deploy.yml "$DEPLOY_DIR/deploy/docker-compose.deploy.yml"
+          install -m 0644 backend/database/schema.sql "$DEPLOY_DIR/backend/database/schema.sql"
+          install -m 0644 mosquitto/config/mosquitto.conf "$DEPLOY_DIR/mosquitto/config/mosquitto.conf"
 
       - name: Deploy to production
         if: ${{ vars.PRODUCTION_DEPLOY_MODE != 'local' }}
@@ -273,8 +273,8 @@ jobs:
       - name: Deploy to local production server
         if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
         run: |
-          mkdir -p "${{ secrets.PRODUCTION_APP_DIR }}"
-          cd "${{ secrets.PRODUCTION_APP_DIR }}"
+          mkdir -p "$PRODUCTION_RUNTIME_APP_DIR"
+          cd "$PRODUCTION_RUNTIME_APP_DIR"
           printf '%s\n%s\n' "${{ secrets.PRODUCTION_ENV_FILE }}" "IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}" > .env
           set -a
           . ./.env
