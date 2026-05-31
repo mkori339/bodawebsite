@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildRideRequestMessage, RIDE_REQUEST_TOPIC } from '../src/messaging/rideRequestPublisher.js';
+import {
+  buildRideRequestMessage,
+  buildRideStatusMessage,
+  RIDE_REQUEST_TOPIC,
+  RIDE_STATUS_TOPIC
+} from '../src/messaging/rideRequestPublisher.js';
 
 test('ride request MQTT topic is defined', () => {
   assert.equal(RIDE_REQUEST_TOPIC, 'ride/request');
+});
+
+test('ride status MQTT topic is defined', () => {
+  assert.equal(RIDE_STATUS_TOPIC, 'ride/status');
 });
 
 test('buildRideRequestMessage returns the expected JSON payload', () => {
@@ -29,4 +38,25 @@ test('buildRideRequestMessage returns the expected JSON payload', () => {
   assert.equal(message.estimated_cost, 6420);
   assert.equal(message.helmet_required, true);
   assert.match(message.created_at, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test('buildRideStatusMessage returns the expected ride lifecycle payload', () => {
+  const message = buildRideStatusMessage({
+    id: 12,
+    customer_id: 3,
+    rider_id: 8,
+    customer_name: 'Asha Juma',
+    rider_name: 'Juma Rider',
+    ride_status: 'rider_assigned',
+    payment_status: 'paid',
+    pickup_location: 'Nyerere Square',
+    destination_location: 'UDOM CIVE'
+  }, 'ride_accepted');
+
+  assert.equal(message.event, 'ride_accepted');
+  assert.equal(message.ride_id, 12);
+  assert.equal(message.rider_id, 8);
+  assert.equal(message.ride_status, 'rider_assigned');
+  assert.equal(message.payment_status, 'paid');
+  assert.match(message.updated_at, /^\d{4}-\d{2}-\d{2}T/);
 });

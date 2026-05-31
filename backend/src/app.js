@@ -2,6 +2,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { metricsHandler, prometheusMiddleware } from './monitoring/metrics.js';
+import { rideEventsHandler, startRideEventBridge } from './messaging/rideEventStream.js';
 import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import rideRoutes from './routes/rideRoutes.js';
@@ -29,9 +30,12 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+app.get('/api/events/rides', rideEventsHandler);
 app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/admin', adminRoutes);
+
+startRideEventBridge();
 
 app.use((error, req, res, _next) => {
   logError(error, {

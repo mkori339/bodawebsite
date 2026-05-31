@@ -1,5 +1,10 @@
 import { query } from '../config/db.js';
-import { buildRideRequestMessage, publishRideRequest } from '../messaging/rideRequestPublisher.js';
+import {
+  buildRideRequestMessage,
+  buildRideStatusMessage,
+  publishRideRequest,
+  publishRideStatus
+} from '../messaging/rideRequestPublisher.js';
 import { calculateQuote } from '../utils/quoteCalculator.js';
 
 function mapRide(row) {
@@ -319,6 +324,7 @@ export async function acceptRide(req, res, next) {
     await query('UPDATE rider_profiles SET is_available = 0 WHERE user_id = ?', [req.user.id]);
 
     const ride = await getRideById(rideId);
+    await publishRideStatus(buildRideStatusMessage(ride, 'ride_accepted'));
 
     return res.json({
       message: 'Ride accepted.',
@@ -346,6 +352,7 @@ export async function startRide(req, res, next) {
     }
 
     const ride = await getRideById(rideId);
+    await publishRideStatus(buildRideStatusMessage(ride, 'ride_started'));
 
     return res.json({
       message: 'Ride started.',
@@ -391,6 +398,7 @@ export async function completeRide(req, res, next) {
     );
 
     const updatedRide = await getRideById(rideId);
+    await publishRideStatus(buildRideStatusMessage(updatedRide, 'ride_completed'));
 
     return res.json({
       message: 'Ride completed successfully.',

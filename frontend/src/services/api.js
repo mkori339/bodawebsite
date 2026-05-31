@@ -44,3 +44,8 @@ export const adminApi = {
   payments: (token) => request('/admin/payments', { token }),
   riders: (token) => request('/admin/riders', { token })
 };
+
+export function createRideEventSource(token) {
+  const url = `${API_BASE_URL}/events/rides?token=${encodeURIComponent(token)}`;
+  return new EventSource(url);
+}

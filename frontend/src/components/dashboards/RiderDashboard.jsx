@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import SectionCard from '../SectionCard.jsx';
 import StatsCard from '../StatsCard.jsx';
 import StatusBadge from '../StatusBadge.jsx';
-import { ridesApi } from '../../services/api.js';
+import { createRideEventSource, ridesApi } from '../../services/api.js';
 import { formatCurrency, formatDate } from '../../services/formatters.js';
 
 export default function RiderDashboard({ token }) {
@@ -24,7 +24,32 @@ export default function RiderDashboard({ token }) {
   }
 
   useEffect(() => {
+    let isMounted = true;
+
     loadRides().catch((loadError) => setError(loadError.message));
+
+    const rideEvents = createRideEventSource(token);
+    rideEvents.addEventListener('ride_request', () => {
+      if (isMounted) {
+        loadRides().catch((loadError) => setError(loadError.message));
+      }
+    });
+    rideEvents.addEventListener('ride_status', () => {
+      if (isMounted) {
+        loadRides().catch((loadError) => setError(loadError.message));
+      }
+    });
+
+    rideEvents.onerror = () => {
+      if (isMounted) {
+        setFlash('Live ride updates are reconnecting...');
+      }
+    };
+
+    return () => {
+      isMounted = false;
+      rideEvents.close();
+    };
   }, [token]);
 
   async function runAction(action, rideId, successMessage) {

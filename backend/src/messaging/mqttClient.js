@@ -79,3 +79,31 @@ export async function publishJson(topic, payload, options = {}) {
     });
   });
 }
+
+export async function subscribeJson(topic, handler, options = {}) {
+  const mqttClient = await connectMqttClient();
+
+  mqttClient.on('message', (messageTopic, messageBuffer) => {
+    if (messageTopic !== topic) {
+      return;
+    }
+
+    try {
+      handler(JSON.parse(messageBuffer.toString()), messageTopic);
+    } catch (error) {
+      logWarn('mqtt_message_parse_failed', { topic: messageTopic, error_message: error.message });
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    mqttClient.subscribe(topic, { qos: 1, ...options }, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      logInfo('mqtt_topic_subscribed', { topic });
+      resolve();
+    });
+  });
+}
