@@ -272,6 +272,46 @@ Solution:
 
 The workflow was updated to use runner-owned folders such as `$HOME/bodarequest-staging` and `$HOME/bodarequest-production`.
 
+## Third-Party Deployment Integration
+
+### Chosen Platform
+**Registry:** Docker Hub (docker.io)
+**Deployment:** Automated CI/CD to Staging and Production environments.
+
+### Pipeline Workflow
+The CI/CD pipeline follows this sequence:
+1.  **Code Push:** Triggered on main branch push.
+2.  **Build Application:** Backend and frontend builds are validated.
+3.  **Run Tests:** Backend unit tests are executed.
+4.  **Push to Docker Hub:**
+    - Logs in to Docker Hub using secure secrets.
+    - Builds multi-tagged images: `latest`, `v1.0`, and commit `sha`.
+    - Pushes images to the public registry.
+5.  **Deploy from Registry:**
+    - Deployment script pulls the specific image tag from Docker Hub.
+    - No local builds are performed on the server.
+6.  **MQTT Real-time Verification:**
+    - Pipeline automatically starts a background MQTT subscriber.
+    - Publishes a verification message `staging-mqtt-verified`.
+    - Confirms that the subscriber actually received the message.
+7.  **Failure Handling:** If any step (build, test, push, or MQTT check) fails, the deployment is aborted.
+
+### MQTT Verification Proof
+The pipeline log should show:
+```text
+Verifying MQTT real-time communication...
+MQTT Verification Success: Message received by subscriber.
+```
+
+### Challenges Encountered
+- **Asynchronous Testing:** Coordinating the MQTT subscriber and publisher within a shell script required careful use of background processes (`&`) and `sleep` timings.
+- **Secret Management:** Securely handling Docker Hub Access Tokens (PAT) instead of raw passwords.
+
+### Screenshots
+[Insert Screenshot of Docker Hub Repository showing v1.0 and latest tags]
+[Insert Screenshot of GitHub Actions log showing successful "Push to Docker Hub"]
+[Insert Screenshot of GitHub Actions log showing successful "MQTT Verification Success"]
+
 ## Conclusion
 
 The Bodaboda application now includes real-time communication using MQTT. Ride request events are published by the backend and received by a subscriber through the Mosquitto broker. The application is Dockerized, tested by CI, and deployed using a CD workflow.
