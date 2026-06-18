@@ -1,7 +1,7 @@
 import mqtt from 'mqtt';
 
 const mqttUrl = process.env.MQTT_URL || 'mqtt://localhost:1883';
-const topic = process.env.MQTT_TOPIC || 'ride/request';
+const topic = process.env.MQTT_TOPIC || 'ride/#';
 const clientId = process.env.MQTT_CLIENT_ID || `bodarequest-driver-subscriber-${process.pid}`;
 
 const client = mqtt.connect(mqttUrl, {
@@ -21,7 +21,7 @@ client.on('connect', () => {
       return;
     }
 
-    console.log(`Listening for ride requests on ${topic}`);
+    console.log(`Listening for all ride events on ${topic}`);
   });
 });
 

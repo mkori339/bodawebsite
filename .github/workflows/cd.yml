@@ -309,6 +309,25 @@ jobs:
               exit 1
             }
 
+      - name: Rollback production on failure
+        if: failure()
+        run: |
+          echo "Production deployment failed. Rolling back to previous version..."
+          DEPLOY_DIR="${{ secrets.PRODUCTION_APP_DIR }}"
+          cd "$DEPLOY_DIR"
+          if [ -f .env ]; then
+            sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=latest/" .env
+            set -a
+            . ./.env
+            set +a
+            docker compose -f deploy/docker-compose.deploy.yml pull
+            docker compose -f deploy/docker-compose.deploy.yml up -d
+            sleep 10
+            curl -fsS "http://localhost:${BACKEND_PORT:-3001}/api/health" && echo "Rollback successful." || echo "Rollback also failed — manual intervention needed."
+          else
+            echo "No .env found — cannot rollback automatically."
+          fi
+
       - name: Deploy to local production server
         if: ${{ vars.PRODUCTION_DEPLOY_MODE == 'local' }}
         run: |
@@ -351,3 +370,21 @@ jobs:
             docker compose -f deploy/docker-compose.deploy.yml logs --tail=100 frontend backend db mqtt
             exit 1
           }
+
+      - name: Rollback local production on failure
+        if: failure()
+        run: |
+          echo "Local production deployment failed. Rolling back to previous version..."
+          cd "$PRODUCTION_RUNTIME_APP_DIR"
+          if [ -f .env ]; then
+            sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=latest/" .env
+            set -a
+            . ./.env
+            set +a
+            docker compose -f deploy/docker-compose.deploy.yml pull
+            docker compose -f deploy/docker-compose.deploy.yml up -d
+            sleep 10
+            curl -fsS "http://localhost:${BACKEND_PORT:-3001}/api/health" && echo "Rollback successful." || echo "Rollback also failed — manual intervention needed."
+          else
+            echo "No .env found — cannot rollback automatically."
+          fi

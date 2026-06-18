@@ -23,8 +23,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run backend tests
-        run: npm --workspace backend run test
+      - name: Run backend tests with coverage
+        run: npm --workspace backend run test -- --coverage --coverageReporters=text --coverageReporters=lcov
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage/
+          retention-days: 14
 
       - name: Validate Docker Compose configuration
         run: docker compose config

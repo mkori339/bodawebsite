@@ -39,7 +39,7 @@ services:
       db:
         condition: service_healthy
       mqtt:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     volumes:
@@ -52,6 +52,12 @@ services:
       - "${MQTT_PORT:-1883}:1883"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -p 1883 -t 'healthcheck' -m 'ping' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   frontend:
     build:
