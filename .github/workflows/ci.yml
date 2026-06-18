@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Run backend tests with coverage
-        run: npm --workspace backend run test -- --coverage --coverageReporters=text --coverageReporters=lcov
+        run: npm --workspace backend run test -- --reporter=text --reporter=lcov
 
       - name: Upload coverage report
         if: always()
